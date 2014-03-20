@@ -10,13 +10,9 @@ SWEP.UseHands = true
  
 SWEP.ViewMovelFOV = 60
 
-SWEP.ViewModel = "models/weapons/c_bizz_melee_1ht.mdl"
+SWEP.ViewModel = "models/weapons/bizzclaw/c_bizz_melee_1handed.mdl"
 SWEP.WorldModel = "models/weapons/b_machete.mdl"
 
-SWEP.ViewModelBoneMods = {
-	["ValveBiped.Bip01_Spine4"] = { scale = Vector(1, 1, 1), pos = Vector(0, 0, -3.225), angle = Angle(0, 0, 0) },
-	["ValveBiped.Bip01_R_Clavicle"] = { scale = Vector(1, 1, 1), pos = Vector(0, 0, -4.183), angle = Angle(0, 0, 0) }
-}
 
 function SWEP:PreDrawViewModel( vm, wep, ply )
 	vm:SetMaterial( "engine/occlusionproxy" )
@@ -76,13 +72,18 @@ SWEP.Weight = 3
 --Damagetype, important for creating effects.
 SWEP.CanBlock = true
 
+SWEP.VElements = {
+	["v_machete"] = { type = "Model", model = "models/warz/melee/machete.mdl", bone = "ValveBiped.Bip01_R_Finger1", rel = "", pos = Vector(1.669, 0.643, -1.14), angle = Angle(-4.587, -29.555, 180), size = Vector(1.049, 1.049, 1.049), color = Color(255, 255, 255, 255), surpresslightning = false, material = "", skin = 0, bodygroup = {} }
+}
+
 function SWEP:EntityFaceBack(ent)
-
 	local angle = self.Owner:GetAngles().y - ent:GetAngles().y
-
-	if angle < -180 then angle = 360 + angle end
-	if angle <= 90 and angle >= -90 then return true end
-
+	if angle < -180 then 
+		angle = 360 + angle 
+	end
+	if angle <= 90 and angle >= -90 then 
+		return true 
+	end
 	return false
 end
 
@@ -90,17 +91,23 @@ SWEP.ChargedTime = 0
 SWEP.AtkStance = "idle"
 SWEP.NextAttk = 0
 SWEP.DrawDelay = 0
+
+SWEP.RightPrepAnim = "1h_attackprep_right_idle"
+SWEP.LeftPrepAnim = "1h_attackprep_left_idle"
+SWEP.RightattackAnim = "1h_attack_right"
+SWEP.LeftattackAnim = "1h_attack_left"
+
 function SWEP:AttackPrep(direction)
 	direction = "right"
 	wt = self.Weight
 	if (CurTime() < self.NextAttk) or (self.DrawDelay > CurTime()) then return end -- wait
 	local anim 
 	if diection == "right" then
-		anim = "1h_attackprep_right_idle"
+		anim = self.RightPrepAnim
 	elseif diection == "left" then
-		anim = "1h_attackprep_right_left"
+		anim = self.LeftPrepAnim
 	else
-		anim = "1h_attackprep_right_idle"
+		anim = self.RightPrepAnim
 	end
 	self.AtkStance = "prep"
 	self.ChargedTime = CurTime()
@@ -119,7 +126,7 @@ end
 function SWEP:Attack(direction)
 	local curclass = self:GetClass()
 	local curowner = self.Owner
-	local pulldelay = 0.06 -- time we wait for the weapon to be pulled back first before it swings
+	local pulldelay = 0.075 -- time we wait for the weapon to be pulled back first before it swings
 	if CurTime() <= self.ChargedTime + pulldelay then 
 		timer.Simple((CurTime() + pulldelay) - self.ChargedTime, function()
 			if curclass == curowner:GetActiveWeapon():GetClass() then
@@ -132,24 +139,23 @@ function SWEP:Attack(direction)
 	local delay = (wt * 0.002)
 	if self.AtkStance == "prep" then
 		if diection == "right" then
-			anim = "1h_attack_right"
+			anim = self.RightattackAnim
 		elseif diection == "left" then
-			anim = "1h_attack_left"
+			anim = self.LeftattackAnim
 		else
-			anim = "1h_attack_right"
+			anim = self.RightattackAnim
 		end
 		 self.AtkStance = "attack"
 		vm = self.Owner:GetViewModel()
-		vm:SetPlaybackRate(2.0)
 		vm:ResetSequence( vm:LookupSequence(anim))
 		vm:SetPlaybackRate(3.0)
 		self.NextAttk = CurTime() + 0.5 -- will configure delay based on weight later
 		self:TraceDamage(direction, delay)
-		local sound = tostring(table.Random(self.SwingSound))
-		self:EmitSound(sound,100,math.random(90,120))
+--		local sound = tostring(table.Random(self.SwingSound))
+--		self:EmitSound(sound,100,math.random(90,120))
 	end
 	self.NextAttk = CurTime() + 0.4
-	self:Idle()
+	self:Idle(3)
 end
 
 
@@ -226,95 +232,14 @@ function MeleeKeyRelease(ply, key)
 end
 hook.Add("KeyRelease", "melee.keyrelease", MeleeKeyRelease)
 
-
-
 function SWEP:SecondaryAttack()
-	if self.Owner:KeyDown(IN_ATTACK2) and self.CanBlock then
-	local blocking  = self:GetNWBool(1)
-	self.Weapon:SetNWBool(0, (not self.Weapon:GetNWBool(0)))
-	self.Owner:EmitSound("npc/zombie/foot_slide"..math.random(1,3)..".wav",65,150)
-	end
-	self.Weapon:SetNextSecondaryFire(CurTime() + 0.1)
-	return
+	return false
 end
 
 function SWEP:PrimaryAttack()
 	return -- does nothing for now, if I don't make this return it will click. 
 end
 
---[[
---SWEP.AttackAnims = { "slash1", "slash2" }
-SWEP.AttackAnims = {"1h_attack_right",}
-function SWEP:PrimaryAttack()
-	local wt = self.Weight
-		dmgmult = 1
-	--	print (self.Owner:GetVelocity() + self.Owner:GetForward( ))
-	if !self.Owner:IsOnGround( ) then
-		dmgmult2 = 2
-	else
-		dmgmult2 = 1
-	end
-	if self.Weapon:GetNWBool(1)	then return end
-	
-	delta = FrameTime( )
-	local Stamina = self.Owner:GetDTFloat( 3 )
-	local stamdrain = (Stamina - self.StaminaCost)
-	local stamApproach = math.Approach( Stamina, stamdrain, 0.0001)
-	if Stamina <= 0.2 then 
-		self.Owner:EmitSound("player/suit_sprint.wav",60,100)
-		return 
-	end
-	self.Owner:SetAnimation( PLAYER_ATTACK1 )
-	self.Owner:SetDTFloat(3,stamdrain)
-	local delay = (wt * 0.002)
-	-- We need this because attack sequences won't work otherwise in multiplayer
-	if ( !SERVER ) then return end
-	local vm = self.Owner:GetViewModel()
-	vm:ResetSequence( vm:LookupSequence( "idle" ) )
-
-	local anim = self.AttackAnims[ math.random( 1, #self.AttackAnims ) ]
-
-	timer.Simple( 0, function()
-		if ( !IsValid( self ) || !IsValid( self.Owner ) || !self.Owner:GetActiveWeapon() || self.Owner:GetActiveWeapon() != self ) then return end
-	
-		local vm = self.Owner:GetViewModel()
-		local sequence = vm:LookupSequence( anim )
-		vm:ResetSequence(sequence )
-		vm:SetPlaybackRate(4.0)
-		self:Idle()
-	end )
-
-	timer.Simple( 0.05, function()
-		if ( !IsValid( self ) || !IsValid( self.Owner ) || !self.Owner:GetActiveWeapon() || self.Owner:GetActiveWeapon() != self ) then return end
-		if ( anim == "slash1" ) then
-			self.Owner:ViewPunch( Angle( 0, 10, 5 ) )
-		elseif ( anim == "slash2" ) then
-			self.Owner:ViewPunch( Angle( 10, 0, 0 ) )
-		end
-	end )
-
-	timer.Simple( 0.2, function()
-		if ( !IsValid( self ) || !IsValid( self.Owner ) || !self.Owner:GetActiveWeapon() || self.Owner:GetActiveWeapon() != self ) then return end
-		if ( anim == "slash1" ) then
-			self.Owner:ViewPunch( Angle( 0, -5, 5 ) )
-			direction = "right"
-		elseif ( anim == "slash2" ) then
-			direction = "down"
-			self.Owner:ViewPunch( Angle( -5, 0, 0 ) )
-		end
-		self.Owner:EmitSound( self.SwingSound )
-		
-	end )
-
-	timer.Simple( delay, function()
-		if ( !IsValid( self ) || !IsValid( self.Owner ) || !self.Owner:GetActiveWeapon() || self.Owner:GetActiveWeapon() != self ) then return end
---		self:DealDamage( anim )
-		self:TraceDamage(direction, delay) 
-	end )
-	self:SetNextPrimaryFire( CurTime() + self.Primary.Delay )
-
-end
-]]
 local tracedone = 0
 function SWEP:TraceDamage(direction, delay)
 	if SERVER then
@@ -498,39 +423,33 @@ hook.Add("PostDrawOpaqueRenderables", "test", function()
 		tracedone = 0
 end)
 
-function SWEP:Idle()
+function SWEP:Idle(rate)
 	local vm = self.Owner:GetViewModel()
-	timer.Create( "idle" .. self:EntIndex(), vm:SequenceDuration(), 1, function()
+	local speed
+	if rate then
+		speed = vm:SequenceDuration() / rate
+	else
+		speed = vm:SequenceDuration()
+	end
+	timer.Create( "idle" .. self:EntIndex(), speed, 1, function()
 		if self.AtkStance == "prep" then return end
 		vm:SetPlaybackRate(1.0)
 		vm:ResetSequence("idle" )
 		self.AtkStance = "idle"
-		
 	end )
 end
 
 function SWEP:OnRemove()
-
 	if ( IsValid( self.Owner ) ) then
 		local vm = self.Owner:GetViewModel()
 		if ( IsValid( vm ) ) then vm:SetMaterial( "" ) end
 	end
-
 	timer.Stop( "idle" .. self:EntIndex() )
-
 end
 
 function SWEP:Deploy()
 	local vm = self.Owner:GetViewModel()
 	vm:ResetSequence( vm:LookupSequence( "idle" ) )
-
 	self:Idle()
-
 	return true
-end
---Hides the default machete..unless we're using the machete itself.
-if SWEP.HideMachete then
-	SWEP.ViewModelBoneMods = {
-		["Box01"] = { scale = Vector(0.009, 0.009, 0.009), pos = Vector(0, 0, 0), angle = Angle(0, 0, 0) }
-	}
 end
