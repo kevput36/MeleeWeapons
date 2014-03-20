@@ -10,7 +10,7 @@ SWEP.Category = "Melee - Bizzclaw"
 
 SWEP.ViewMovelFOV = 70
 
-SWEP.WorldModel = "models/weapons/b_machete.mdl"
+SWEP.WorldModel = "models/warz/melee/machete.mdl"
 SWEP.ViewModel = "models/weapons/bizzclaw/c_bizz_melee_1handed.mdl" 
  
 SWEP.AutoswitchTo = false
@@ -33,7 +33,9 @@ SWEP.Primary.Damage		= 30
 
 SWEP.ShowViewModel = true
 SWEP.ShowWorldModel = false
-SWEP.SwingSound = Sound( "npc/fast_zombie/claw_miss"..math.random(1,2)..".wav" )
+SWEP.SwingSound = { 
+	"npc/fast_zombie/claw_miss"..math.random(1,2)..".wav",
+{
 SWEP.HitSound = Sound( "Flesh.ImpactHard" )
 
 SWEP.RightPrepAnim = "1h_attackprep_right_idle"
